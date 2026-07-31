@@ -93,11 +93,12 @@ class DataFetcher:
                         self.weather_data["wind_mph"] = wind
                         self.weather_data["pollen"] = pollen_level
                         
+                time.sleep(config.WEATHER_UPDATE_INTERVAL)
+                        
             except Exception as e:
                 print(f"Weather fetch error: {e}")
-                
-            time.sleep(config.WEATHER_UPDATE_INTERVAL)
-
+                # Retry in 10 seconds if there was an error
+                time.sleep(10)
     def _update_news_loop(self):
         while True:
             try:

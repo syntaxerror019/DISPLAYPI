@@ -71,7 +71,7 @@ class DisplayRenderer:
         if font is None:
             font = self.font_lcd
             
-        full_text = f"{prefix} {colon} {suffix}"
+        full_text = f"{prefix}{colon}{suffix}"
         
         w_full, h_full = textsize(full_text, font=font)
         x_offset = (self.device.width - w_full) // 2
