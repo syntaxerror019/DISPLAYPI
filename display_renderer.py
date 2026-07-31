@@ -1,8 +1,9 @@
 from luma.core.interface.serial import spi, noop
+# pyrefly: ignore [missing-import]
 from luma.core.render import canvas
 from luma.led_matrix.device import max7219
 from luma.core.legacy import show_message, textsize, text as draw_text
-from luma.core.legacy.font import proportional, CP437_FONT, LCD_FONT
+from luma.core.legacy.font import proportional, CP437_FONT, LCD_FONT, SINCLAIR_FONT
 import config
 
 class DisplayRenderer:
@@ -23,6 +24,7 @@ class DisplayRenderer:
         # Standard professional fonts
         self.font_standard = proportional(CP437_FONT)
         self.font_lcd = proportional(LCD_FONT)
+        self.font_sinclair = proportional(SINCLAIR_FONT)
 
     def scroll_text(self, text, font=None, y_offset=0):
         if font is None:
@@ -41,18 +43,35 @@ class DisplayRenderer:
         if font is None:
             font = self.font_standard
             
-        # Measure text width
         w, h = textsize(text, font=font)
-        # Calculate centered X
-        # Display width is device.width (e.g. 96)
         x_offset = (self.device.width - w) // 2
         
-        # Prevent it from going offscreen on the left if text is too long
         if x_offset < 0:
             x_offset = 0
 
         with canvas(self.device) as draw:
             draw_text(draw, (x_offset, y_offset), text, fill="white", font=font)
+
+    def display_time_with_blinking_colon(self, prefix, colon, suffix, font=None, colon_show=True):
+        if font is None:
+            font = self.font_lcd
             
-    def clear(self):
+        full_text = f"{prefix}{colon}{suffix}"
+        
+        w_full, h_full = textsize(full_text, font=font)
+        x_offset = (self.device.width - w_full) // 2
+        if x_offset < 0:
+            x_offset = 0
+
+        with canvas(self.device) as draw:
+            # Draw the full text
+            draw_text(draw, (x_offset, 0), full_text, fill="white", font=font)
+            
+            # If colon should be hidden, draw a black rectangle over it
+            if not colon_show:
+                w_prefix, _ = textsize(prefix, font=font)
+                w_colon, _ = textsize(colon, font=font)
+                colon_x = x_offset + w_prefix
+                # Overwrite colon area with black
+                draw.rectangle((colon_x, 0, colon_x + w_colon, self.device.height), fill="black")
         self.device.clear()

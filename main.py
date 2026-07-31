@@ -31,10 +31,11 @@ def main():
                 minute = now.strftime("%M")
                 ampm = now.strftime("%p")
                 
-                colon = ":" if colon_show else " "
-                time_str = f"{month_day} {hour}{colon}{minute} {ampm}"
+                prefix = f"{month_day} {hour}"
+                colon = ":"
+                suffix = f"{minute} {ampm}"
                 
-                renderer.display_centered(time_str, font=renderer.font_lcd)
+                renderer.display_time_with_blinking_colon(prefix, colon, suffix, font=renderer.font_lcd, colon_show=colon_show)
                 
                 # Toggle colon every 0.5s
                 colon_show = not colon_show
@@ -74,7 +75,7 @@ def main():
             news = fetcher.get_news()
             if news:
                 news_str = "  ***  ".join(news)
-                renderer.scroll_text(f"NEWS: {news_str}", font=renderer.font_lcd)
+                renderer.scroll_text(f"NEWS: {news_str}", font=renderer.font_sinclair)
 
         except KeyboardInterrupt:
             print("Exiting...")
