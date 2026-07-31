@@ -47,29 +47,24 @@ def main():
                 # Temp
                 t_f = weather.get("temp_f")
                 t_c = weather.get("temp_c")
-                renderer.display_centered(f"T: {t_f:.0f}F {t_c:.0f}C", font=renderer.font_standard)
-                time.sleep(3)
+                renderer.display_centered_animated(f"T: {t_f:.0f}F {t_c:.0f}C", font=renderer.font_standard)
                 
                 # Feels Like
                 f_f = weather.get("feels_f")
                 f_c = weather.get("feels_c")
-                renderer.display_centered(f"FL: {f_f:.0f}F {f_c:.0f}C", font=renderer.font_standard)
-                time.sleep(3)
+                renderer.display_centered_animated(f"FL: {f_f:.0f}F {f_c:.0f}C", font=renderer.font_standard)
                 
                 # Humidity
                 hum = weather.get("humidity")
-                renderer.display_centered(f"HUM: {hum:.0f}%", font=renderer.font_standard)
-                time.sleep(3)
+                renderer.display_centered_animated(f"HUM: {hum:.0f}%", font=renderer.font_standard)
                 
                 # Wind
                 wind = weather.get("wind_mph")
-                renderer.display_centered(f"WND: {wind:.0f}mph", font=renderer.font_standard)
-                time.sleep(3)
+                renderer.display_centered_animated(f"WND: {wind:.0f}mph", font=renderer.font_standard)
                 
                 # Pollen
                 pollen = weather.get("pollen")
-                renderer.display_centered(f"POL: {pollen}", font=renderer.font_standard)
-                time.sleep(3)
+                renderer.display_centered_animated(f"POL: {pollen}", font=renderer.font_standard)
             
             # 3. News (SCROLLING)
             news = fetcher.get_news()

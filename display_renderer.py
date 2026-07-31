@@ -5,6 +5,7 @@ from luma.led_matrix.device import max7219
 from luma.core.legacy import show_message, textsize, text as draw_text
 from luma.core.legacy.font import proportional, CP437_FONT, LCD_FONT, SINCLAIR_FONT
 import config
+import time
 
 class DisplayRenderer:
     def __init__(self):
@@ -52,11 +53,25 @@ class DisplayRenderer:
         with canvas(self.device) as draw:
             draw_text(draw, (x_offset, y_offset), text, fill="white", font=font)
 
+    def display_centered_animated(self, text, font=None, hold_time=2.5):
+        # Slide In (from bottom up)
+        for y in range(8, -1, -1):
+            self.display_centered(text, font=font, y_offset=y)
+            time.sleep(0.05)
+            
+        # Hold on screen
+        time.sleep(hold_time)
+        
+        # Slide Out (up and away)
+        for y in range(0, -9, -1):
+            self.display_centered(text, font=font, y_offset=y)
+            time.sleep(0.05)
+
     def display_time_with_blinking_colon(self, prefix, colon, suffix, font=None, colon_show=True):
         if font is None:
             font = self.font_lcd
             
-        full_text = f"{prefix}{colon}{suffix}"
+        full_text = f"{prefix} {colon} {suffix}"
         
         w_full, h_full = textsize(full_text, font=font)
         x_offset = (self.device.width - w_full) // 2
