@@ -16,8 +16,8 @@ TIMEZONE = "auto"
 WEATHER_UPDATE_INTERVAL = 900  # 15 minutes
 
 # --- News Settings ---
-# Defaulting to Reuters Top News
-RSS_FEED_URL = "http://feeds.reuters.com/reuters/topNews"
+# Google News RSS
+RSS_FEED_URL = "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
 # Number of headlines to display per cycle
 MAX_HEADLINES = 5
 # News update interval in seconds
