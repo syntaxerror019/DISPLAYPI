@@ -74,4 +74,6 @@ class DisplayRenderer:
                 colon_x = x_offset + w_prefix
                 # Overwrite colon area with black
                 draw.rectangle((colon_x, 0, colon_x + w_colon, self.device.height), fill="black")
+
+    def clear(self):
         self.device.clear()

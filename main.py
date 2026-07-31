@@ -75,7 +75,7 @@ def main():
             news = fetcher.get_news()
             if news:
                 news_str = "  ***  ".join(news)
-                renderer.scroll_text(f"NEWS: {news_str}", font=renderer.font_sinclair)
+                renderer.scroll_text(f"NEWS: {news_str}", font=renderer.font_lcd)
 
         except KeyboardInterrupt:
             print("Exiting...")
