@@ -1,12 +1,9 @@
 from luma.core.interface.serial import spi, noop
 from luma.core.render import canvas
 from luma.led_matrix.device import max7219
-from luma.core.legacy import show_message
-from luma.core.legacy.font import proportional, CP437_FONT, TINY_FONT, SINCLAIR_FONT, LCD_FONT
-from PIL import ImageOps
+from luma.core.legacy import show_message, textsize, text as draw_text
+from luma.core.legacy.font import proportional, CP437_FONT, LCD_FONT
 import config
-import time
-import random
 
 class DisplayRenderer:
     def __init__(self):
@@ -23,21 +20,13 @@ class DisplayRenderer:
         # Set brightness
         self.device.contrast(config.BRIGHTNESS)
         
-        # Fonts collection for "epilepsy" randomized effects
-        self.fonts = [
-            proportional(CP437_FONT),
-            proportional(TINY_FONT),
-            proportional(SINCLAIR_FONT),
-            proportional(LCD_FONT)
-        ]
-        self.font = self.fonts[0]
-
-    def get_random_font(self):
-        return random.choice(self.fonts)
+        # Standard professional fonts
+        self.font_standard = proportional(CP437_FONT)
+        self.font_lcd = proportional(LCD_FONT)
 
     def scroll_text(self, text, font=None, y_offset=0):
         if font is None:
-            font = self.font
+            font = self.font_standard
             
         show_message(
             self.device, 
@@ -48,34 +37,22 @@ class DisplayRenderer:
             y_offset=y_offset
         )
 
-    def display_static(self, text, font=None, x_offset=0, y_offset=0, invert=False):
+    def display_centered(self, text, font=None, y_offset=0):
         if font is None:
-            font = self.font
+            font = self.font_standard
             
-        with canvas(self.device) as draw:
-            from luma.core.legacy import text as draw_text
-            # If invert is true, draw white background and black text
-            if invert:
-                draw.rectangle(self.device.bounding_box, outline="white", fill="white")
-                draw_text(draw, (x_offset, y_offset), text, fill="black", font=font)
-            else:
-                draw_text(draw, (x_offset, y_offset), text, fill="white", font=font)
+        # Measure text width
+        w, h = textsize(text, font=font)
+        # Calculate centered X
+        # Display width is device.width (e.g. 96)
+        x_offset = (self.device.width - w) // 2
+        
+        # Prevent it from going offscreen on the left if text is too long
+        if x_offset < 0:
+            x_offset = 0
 
-    def flash_effect(self, text, duration=2.0, font=None):
-        """Flashes text rapidly with inverted colors for a given duration"""
-        if font is None:
-            font = self.get_random_font()
+        with canvas(self.device) as draw:
+            draw_text(draw, (x_offset, y_offset), text, fill="white", font=font)
             
-        start_time = time.time()
-        invert = False
-        while time.time() - start_time < duration:
-            self.display_static(text, font=font, invert=invert)
-            invert = not invert
-            # Fast flash
-            time.sleep(0.05)
-        
-        # Settle on non-inverted
-        self.display_static(text, font=font, invert=False)
-        
     def clear(self):
         self.device.clear()

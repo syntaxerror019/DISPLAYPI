@@ -3,10 +3,17 @@ import time
 import requests
 import feedparser
 import config
+import unicodedata
 
 class DataFetcher:
     def __init__(self):
-        self.weather_data = {"temp": None, "desc": None}
+        self.weather_data = {
+            "temp_c": None, "temp_f": None,
+            "feels_c": None, "feels_f": None,
+            "humidity": None,
+            "wind_mph": None,
+            "pollen": None
+        }
         self.news_headlines = []
         
         self._lock = threading.Lock()
@@ -26,22 +33,66 @@ class DataFetcher:
         with self._lock:
             return list(self.news_headlines)
 
+    def _sanitize_string(self, text):
+        """Removes smart quotes and unsupported unicode characters."""
+        # Normalize unicode to closest ASCII representation (e.g. smart quotes to standard quotes)
+        text = unicodedata.normalize('NFKD', text)
+        # Keep only standard ASCII (0-127), ignore the rest
+        text = text.encode('ascii', 'ignore').decode('ascii')
+        return text
+
     def _update_weather_loop(self):
         while True:
             try:
-                # Open-Meteo free API
-                url = f"https://api.open-meteo.com/v1/forecast?latitude={config.LATITUDE}&longitude={config.LONGITUDE}&current=temperature_2m,weather_code&temperature_unit=fahrenheit&timezone={config.TIMEZONE}"
-                response = requests.get(url, timeout=10)
-                if response.status_code == 200:
-                    data = response.json()
-                    current = data.get("current", {})
-                    temp = current.get("temperature_2m")
-                    code = current.get("weather_code", 0)
-                    desc = self._wmo_code_to_desc(code)
+                # 1. Fetch main weather
+                w_url = f"https://api.open-meteo.com/v1/forecast?latitude={config.LATITUDE}&longitude={config.LONGITUDE}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m&wind_speed_unit=mph&timezone={config.TIMEZONE}"
+                w_resp = requests.get(w_url, timeout=10)
+                
+                # 2. Fetch pollen (Air Quality API)
+                p_url = f"https://air-quality-api.open-meteo.com/v1/air-quality?latitude={config.LATITUDE}&longitude={config.LONGITUDE}&current=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&timezone={config.TIMEZONE}"
+                p_resp = requests.get(p_url, timeout=10)
+                
+                if w_resp.status_code == 200 and p_resp.status_code == 200:
+                    w_data = w_resp.json()
+                    p_data = p_resp.json()
                     
+                    current = w_data.get("current", {})
+                    temp_c = current.get("temperature_2m")
+                    feels_c = current.get("apparent_temperature")
+                    humidity = current.get("relative_humidity_2m")
+                    wind = current.get("wind_speed_10m")
+                    
+                    p_current = p_data.get("current", {})
+                    # Sum all pollen types
+                    pollen_sum = sum([
+                        p_current.get("alder_pollen", 0) or 0,
+                        p_current.get("birch_pollen", 0) or 0,
+                        p_current.get("grass_pollen", 0) or 0,
+                        p_current.get("mugwort_pollen", 0) or 0,
+                        p_current.get("olive_pollen", 0) or 0,
+                        p_current.get("ragweed_pollen", 0) or 0
+                    ])
+                    
+                    # Basic heuristic for pollen severity
+                    if pollen_sum < 10:
+                        pollen_level = "Low"
+                    elif pollen_sum < 50:
+                        pollen_level = "Medium"
+                    else:
+                        pollen_level = "High"
+                        
                     with self._lock:
-                        self.weather_data["temp"] = temp
-                        self.weather_data["desc"] = desc
+                        if temp_c is not None:
+                            self.weather_data["temp_c"] = temp_c
+                            self.weather_data["temp_f"] = (temp_c * 9/5) + 32
+                        if feels_c is not None:
+                            self.weather_data["feels_c"] = feels_c
+                            self.weather_data["feels_f"] = (feels_c * 9/5) + 32
+                            
+                        self.weather_data["humidity"] = humidity
+                        self.weather_data["wind_mph"] = wind
+                        self.weather_data["pollen"] = pollen_level
+                        
             except Exception as e:
                 print(f"Weather fetch error: {e}")
                 
@@ -53,7 +104,8 @@ class DataFetcher:
                 feed = feedparser.parse(config.RSS_FEED_URL)
                 headlines = []
                 for entry in feed.entries[:config.MAX_HEADLINES]:
-                    headlines.append(entry.title)
+                    sanitized_title = self._sanitize_string(entry.title)
+                    headlines.append(sanitized_title)
                 
                 if headlines:
                     with self._lock:
@@ -62,38 +114,3 @@ class DataFetcher:
                 print(f"News fetch error: {e}")
                 
             time.sleep(config.NEWS_UPDATE_INTERVAL)
-            
-    def _wmo_code_to_desc(self, code):
-        # WMO Weather interpretation codes
-        # https://open-meteo.com/en/docs
-        wmo_codes = {
-            0: "Clear sky",
-            1: "Mainly clear",
-            2: "Partly cloudy",
-            3: "Overcast",
-            45: "Fog",
-            48: "Depositing rime fog",
-            51: "Light Drizzle",
-            53: "Moderate Drizzle",
-            55: "Dense Drizzle",
-            56: "Light Freezing Drizzle",
-            57: "Dense Freezing Drizzle",
-            61: "Slight Rain",
-            63: "Moderate Rain",
-            65: "Heavy Rain",
-            66: "Light Freezing Rain",
-            67: "Heavy Freezing Rain",
-            71: "Slight Snow",
-            73: "Moderate Snow",
-            75: "Heavy Snow",
-            77: "Snow grains",
-            80: "Slight Rain showers",
-            81: "Moderate Rain showers",
-            82: "Violent Rain showers",
-            85: "Slight Snow showers",
-            86: "Heavy Snow showers",
-            95: "Thunderstorm",
-            96: "Thunderstorm with slight hail",
-            99: "Thunderstorm with heavy hail"
-        }
-        return wmo_codes.get(code, "Unknown")
