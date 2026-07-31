@@ -51,15 +51,26 @@ def main():
                 # News uses standard font to remain readable while scrolling
                 renderer.scroll_text(f"NEWS: {news_str}")
             
-            # 4. Countdowns (Static Flashy)
-            for name, dt in config.COUNTDOWNS.items():
-                delta = dt - datetime.datetime.now()
-                days = delta.days
-                if days >= 0:
-                    countdown_str = f"{name[:5]}: {days}D"
-                    font = renderer.get_random_font()
-                    renderer.flash_effect(countdown_str, duration=1.0, font=font)
-                    time.sleep(2.0)
+            # 4. Countdowns (Static Flashy - Only Closest Holiday)
+            now = datetime.datetime.now()
+            closest_holiday = None
+            min_days = float('inf')
+            
+            for name, (month, day) in config.HOLIDAYS.items():
+                holiday_date = datetime.datetime(now.year, month, day)
+                if holiday_date < now:
+                    holiday_date = datetime.datetime(now.year + 1, month, day)
+                
+                days = (holiday_date - now).days
+                if 0 <= days < min_days:
+                    min_days = days
+                    closest_holiday = name
+                    
+            if closest_holiday:
+                countdown_str = f"{closest_holiday[:5]}: {min_days}D"
+                font = renderer.get_random_font()
+                renderer.flash_effect(countdown_str, duration=1.0, font=font)
+                time.sleep(2.0)
 
         except KeyboardInterrupt:
             print("Exiting...")

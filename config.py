@@ -24,14 +24,13 @@ MAX_HEADLINES = 5
 NEWS_UPDATE_INTERVAL = 3600  # 1 hour
 
 # --- Countdowns ---
-# Dictionary of countdowns: "Name": datetime object
-# Add or remove events as needed
-COUNTDOWNS = {
-    "Xmas": datetime.datetime(datetime.datetime.now().year, 12, 25),
-    "New Year": datetime.datetime(datetime.datetime.now().year + 1, 1, 1),
+# Dictionary of holidays: "Name": (Month, Day)
+# For holidays without fixed dates (like Thanksgiving), we can approximate or use fixed ones for now
+HOLIDAYS = {
+    "New Year": (1, 1),
+    "V-Day": (2, 14),
+    "St Pat": (3, 17),
+    "July 4": (7, 4),
+    "Hween": (10, 31),
+    "Xmas": (12, 25),
 }
-# Make sure countdowns are in the future
-for name in list(COUNTDOWNS.keys()):
-    if COUNTDOWNS[name] < datetime.datetime.now():
-        # Move to next year if it already passed
-        COUNTDOWNS[name] = COUNTDOWNS[name].replace(year=COUNTDOWNS[name].year + 1)

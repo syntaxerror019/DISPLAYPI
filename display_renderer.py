@@ -2,7 +2,7 @@ from luma.core.interface.serial import spi, noop
 from luma.core.render import canvas
 from luma.led_matrix.device import max7219
 from luma.core.legacy import show_message
-from luma.core.legacy.font import proportional, CP437_FONT, TINY_FONT, SINCLAIR_FONT, LCD_FONT, UKR_FONT, TOMS_FONT
+from luma.core.legacy.font import proportional, CP437_FONT, TINY_FONT, SINCLAIR_FONT, LCD_FONT
 from PIL import ImageOps
 import config
 import time
@@ -28,9 +28,7 @@ class DisplayRenderer:
             proportional(CP437_FONT),
             proportional(TINY_FONT),
             proportional(SINCLAIR_FONT),
-            proportional(LCD_FONT),
-            proportional(UKR_FONT),
-            proportional(TOMS_FONT)
+            proportional(LCD_FONT)
         ]
         self.font = self.fonts[0]
 
