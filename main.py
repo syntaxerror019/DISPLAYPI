@@ -34,7 +34,7 @@ def main():
                 colon = ":" if colon_show else " "
                 time_str = f"{month_day} {hour}{colon}{minute} {ampm}"
                 
-                renderer.display_centered(time_str, font=renderer.font_standard)
+                renderer.display_centered(time_str, font=renderer.font_lcd)
                 
                 # Toggle colon every 0.5s
                 colon_show = not colon_show
@@ -74,7 +74,7 @@ def main():
             news = fetcher.get_news()
             if news:
                 news_str = "  ***  ".join(news)
-                renderer.scroll_text(f"NEWS: {news_str}", font=renderer.font_standard)
+                renderer.scroll_text(f"NEWS: {news_str}", font=renderer.font_lcd)
 
         except KeyboardInterrupt:
             print("Exiting...")
