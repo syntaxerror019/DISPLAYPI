@@ -71,21 +71,31 @@ class DisplayRenderer:
         if font is None:
             font = self.font_lcd
             
-        # Lock the X offset based on the full width with a colon
-        # This prevents the left side (date and hour) from shifting AT ALL.
-        full_width_text = f"{prefix}:{suffix}"
-        w_full, _ = textsize(full_width_text, font=font)
+        # 1. ALWAYS measure and center the text as if the colon is there
+        # This completely locks the string in place and guarantees 0 shifting!
+        full_text = f"{prefix}{colon}{suffix}"
+        w_full, _ = textsize(full_text, font=font)
         
         x_offset = (self.device.width - w_full) // 2
         if x_offset < 0:
             x_offset = 0
 
-        # Draw the text with either a colon or a space
-        actual_colon = ":" if colon_show else " "
-        actual_text = f"{prefix}{actual_colon}{suffix}"
-        
         with canvas(self.device) as draw:
-            draw_text(draw, (x_offset, 0), actual_text, fill="white", font=font)
+            # 2. Draw the full text with the colon
+            draw_text(draw, (x_offset, 0), full_text, fill="white", font=font)
+            
+            # 3. If the colon should be hidden, draw a precision black mask over it!
+            if not colon_show:
+                w_prefix, _ = textsize(prefix, font=font)
+                w_colon, _ = textsize(colon, font=font)
+                colon_x = x_offset + w_prefix
+                
+                # The luma text() adds a 1-pixel gap after every character.
+                # To avoid clipping adjacent numbers, our mask must NOT cover that gap.
+                # Pillow's rectangle is inclusive, so we subtract 2 from w_colon to isolate ONLY the dot pixels.
+                x0 = colon_x
+                x1 = colon_x + w_colon - 2
+                draw.rectangle((x0, 0, x1, self.device.height), fill="black")
 
     def display_epileptic_countdown(self, text, hold_time=3.0, font=None):
         if font is None:
