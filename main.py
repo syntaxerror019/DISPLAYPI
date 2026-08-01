@@ -5,9 +5,34 @@ from data_fetcher import DataFetcher
 import config
 import json
 import os
+import sys
+import subprocess
 
 def get_ordinal(n):
     return str(n) + {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, 'th')
+
+def check_for_updates(renderer):
+    try:
+        # Fetch latest changes from remote
+        subprocess.run(["git", "fetch"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        # Check if we are behind origin/main
+        result = subprocess.run(["git", "status", "-uno"], capture_output=True, text=True)
+        if "Your branch is behind" in result.stdout:
+            print("New update detected! Pulling from repository...")
+            renderer.display_epileptic_countdown("UPDATING...", hold_time=1.0)
+            
+            # Autostash will save local countdowns.json, pull, and re-apply
+            subprocess.run(["git", "pull", "--rebase", "--autostash"], check=True)
+            print("Update successful. Restarting script...")
+            
+            # Clear the display before restart so it isn't frozen
+            renderer.clear()
+            
+            # Completely replace the current process with the new version of itself
+            os.execv(sys.executable, ['python3'] + sys.argv)
+    except Exception as e:
+        print(f"Auto-update failed: {e}")
 
 def main():
     print("Starting Professional Kitchen Display...")
@@ -21,6 +46,9 @@ def main():
 
     while True:
         try:
+            # 0. Check for OTA Updates via Git
+            check_for_updates(renderer)
+            
             # 1. Clock and Date (30 seconds with blinking colon)
             clock_start = time.time()
             colon_show = True
@@ -49,24 +77,24 @@ def main():
                 # Temp
                 t_f = weather.get("temp_f")
                 t_c = weather.get("temp_c")
-                renderer.display_centered_animated(f"T: {t_f:.0f}F {t_c:.0f}C", font=renderer.font_standard)
+                renderer.display_centered_animated(f"Temp: {t_f:.0f}F {t_c:.0f}C", font=renderer.font_standard)
                 
                 # Feels Like
                 f_f = weather.get("feels_f")
                 f_c = weather.get("feels_c")
-                renderer.display_centered_animated(f"FL: {f_f:.0f}F {f_c:.0f}C", font=renderer.font_standard)
+                renderer.display_centered_animated(f"Feels: {f_f:.0f}F {f_c:.0f}C", font=renderer.font_standard)
                 
                 # Humidity
                 hum = weather.get("humidity")
-                renderer.display_centered_animated(f"HUM: {hum:.0f}%", font=renderer.font_standard)
+                renderer.display_centered_animated(f"Humidity: {hum:.0f}%", font=renderer.font_standard)
                 
                 # Wind
                 wind = weather.get("wind_mph")
-                renderer.display_centered_animated(f"WND: {wind:.0f}mph", font=renderer.font_standard)
+                renderer.display_centered_animated(f"Wind: {wind:.0f}mph", font=renderer.font_standard)
                 
                 # Pollen
                 pollen = weather.get("pollen")
-                renderer.display_centered_animated(f"POL: {pollen}", font=renderer.font_standard)
+                renderer.display_centered_animated(f"Pollen: {pollen}", font=renderer.font_standard)
                 
                 # --- Forecast (SCROLLING) ---
                 f_desc = weather.get("forecast_desc")
@@ -76,7 +104,7 @@ def main():
                 
                 forecast_parts = []
                 if f_desc:
-                    forecast_parts.append(f"Tomorrow's Forecast: {f_desc}")
+                    forecast_parts.append(f"Tomorrow's Weather Forecast: {f_desc}")
                 if f_max is not None and f_min is not None:
                     forecast_parts.append(f"High: {f_max:.0f}F")
                     forecast_parts.append(f"Low: {f_min:.0f}F")
@@ -108,7 +136,7 @@ def main():
                                 
                         if closest_event:
                             cd_text = f"{closest_days} DAYS UNTIL {closest_event.upper()}!"
-                            renderer.display_epileptic_countdown(cd_text, duration=4.0, font=renderer.font_standard)
+                            renderer.display_epileptic_countdown(cd_text, hold_time=3.0, font=renderer.font_standard)
                     except Exception as e:
                         print(f"Countdown error: {e}")
             

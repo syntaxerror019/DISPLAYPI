@@ -71,28 +71,23 @@ class DisplayRenderer:
         if font is None:
             font = self.font_lcd
             
-        w_prefix, h_prefix = textsize(prefix, font=font)
-        w_colon, h_colon = textsize(colon, font=font)
-        w_suffix, h_suffix = textsize(suffix, font=font)
+        # Lock the X offset based on the full width with a colon
+        # This prevents the left side (date and hour) from shifting AT ALL.
+        full_width_text = f"{prefix}:{suffix}"
+        w_full, _ = textsize(full_width_text, font=font)
         
-        # Calculate full width for centering
-        w_full = w_prefix + w_colon + w_suffix
         x_offset = (self.device.width - w_full) // 2
         if x_offset < 0:
             x_offset = 0
 
+        # Draw the text with either a colon or a space
+        actual_colon = ":" if colon_show else " "
+        actual_text = f"{prefix}{actual_colon}{suffix}"
+        
         with canvas(self.device) as draw:
-            # Draw prefix
-            draw_text(draw, (x_offset, 0), prefix, fill="white", font=font)
-            
-            # Draw colon if it should be shown
-            if colon_show:
-                draw_text(draw, (x_offset + w_prefix, 0), colon, fill="white", font=font)
-                
-            # Draw suffix
-            draw_text(draw, (x_offset + w_prefix + w_colon, 0), suffix, fill="white", font=font)
+            draw_text(draw, (x_offset, 0), actual_text, fill="white", font=font)
 
-    def display_epileptic_countdown(self, text, duration=3.0, font=None):
+    def display_epileptic_countdown(self, text, hold_time=3.0, font=None):
         if font is None:
             font = self.font_standard
             
@@ -101,22 +96,38 @@ class DisplayRenderer:
         if x_offset < 0:
             x_offset = 0
             
+        # 1. Intro Flashes (300ms total, super fast)
         start_time = time.time()
         inverted = False
-        
-        while time.time() - start_time < duration:
+        while time.time() - start_time < 0.3:
             with canvas(self.device) as draw:
                 if inverted:
-                    # White background, black text
                     draw.rectangle((0, 0, self.device.width, self.device.height), fill="white")
                     draw_text(draw, (x_offset, 0), text, fill="black", font=font)
                 else:
-                    # Black background, white text
                     draw.rectangle((0, 0, self.device.width, self.device.height), fill="black")
                     draw_text(draw, (x_offset, 0), text, fill="white", font=font)
-            
             inverted = not inverted
-            time.sleep(0.05) # Super fast flash
+            time.sleep(0.03)
+            
+        # 2. Hold Normal (for hold_time seconds)
+        with canvas(self.device) as draw:
+            draw_text(draw, (x_offset, 0), text, fill="white", font=font)
+        time.sleep(hold_time)
+        
+        # 3. Outro Flashes (300ms total, super fast)
+        start_time = time.time()
+        inverted = False
+        while time.time() - start_time < 0.3:
+            with canvas(self.device) as draw:
+                if inverted:
+                    draw.rectangle((0, 0, self.device.width, self.device.height), fill="white")
+                    draw_text(draw, (x_offset, 0), text, fill="black", font=font)
+                else:
+                    draw.rectangle((0, 0, self.device.width, self.device.height), fill="black")
+                    draw_text(draw, (x_offset, 0), text, fill="white", font=font)
+            inverted = not inverted
+            time.sleep(0.03)
 
     def clear(self):
         self.device.clear()
