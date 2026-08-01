@@ -151,10 +151,10 @@ def main():
                     renderer.scroll_text(forecast_str, font=renderer.font_standard)
                     
             # 2.5 History Events (Only once every 5 loops)
-            if loop_count % 5 == 0:
+            if True:
                 history_events = fetcher.get_history()
                 if history_events:
-                    hist_str = "  ***  ".join(history_events)
+                    hist_str = history_events[0]
                     renderer.scroll_text(f"THIS DAY IN HISTORY: {hist_str}", font=renderer.font_lcd)
 
             # 3. Normal Countdowns (> 1 hour)
