@@ -15,15 +15,18 @@ class DataFetcher:
             "pollen": None
         }
         self.news_headlines = []
+        self.history_events = []
         
         self._lock = threading.Lock()
         
         # Start daemon threads
         self.weather_thread = threading.Thread(target=self._update_weather_loop, daemon=True)
         self.news_thread = threading.Thread(target=self._update_news_loop, daemon=True)
+        self.history_thread = threading.Thread(target=self._update_history_loop, daemon=True)
         
         self.weather_thread.start()
         self.news_thread.start()
+        self.history_thread.start()
 
     def get_weather(self):
         with self._lock:
@@ -32,6 +35,10 @@ class DataFetcher:
     def get_news(self):
         with self._lock:
             return list(self.news_headlines)
+
+    def get_history(self):
+        with self._lock:
+            return list(self.history_events)
 
     def _sanitize_string(self, text):
         """Removes smart quotes and unsupported unicode characters."""
@@ -67,12 +74,12 @@ class DataFetcher:
                     daily = w_data.get("daily", {})
                     if daily and len(daily.get("time", [])) > 1:
                         forecast_code = daily.get("weather_code", [])[1]
-                        forecast_desc = self._wmo_code_to_desc(forecast_code)
+                        forecast_desc = self._wmo_code_to_desc_conversational(forecast_code)
                         forecast_max_c = daily.get("temperature_2m_max", [])[1]
                         forecast_min_c = daily.get("temperature_2m_min", [])[1]
                         forecast_pop = daily.get("precipitation_probability_max", [])[1]
                     else:
-                        forecast_desc = "Unknown"
+                        forecast_desc = "partly cloudy"
                         forecast_max_c = None
                         forecast_min_c = None
                         forecast_pop = None
@@ -137,15 +144,35 @@ class DataFetcher:
                 
             time.sleep(config.NEWS_UPDATE_INTERVAL)
 
-    def _wmo_code_to_desc(self, code):
+    def _update_history_loop(self):
+        while True:
+            try:
+                resp = requests.get("https://api.dayinhistory.dev/v1/today/events/", timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    events = []
+                    for item in data.get("results", [])[:3]: # grab top 3 events
+                        year = item.get("year", "")
+                        desc = item.get("description", "")
+                        events.append(f"In {year}, {desc}")
+                    
+                    if events:
+                        with self._lock:
+                            self.history_events = events
+            except Exception as e:
+                print(f"History fetch error: {e}")
+                
+            time.sleep(43200) # 12 hours
+
+    def _wmo_code_to_desc_conversational(self, code):
         wmo_codes = {
-            0: "Clear", 1: "M. Clear", 2: "P. Cloudy", 3: "Overcast",
-            45: "Fog", 48: "Rime Fog", 51: "L. Drizzle", 53: "Drizzle",
-            55: "H. Drizzle", 56: "Freez Drizzle", 57: "H. Freez Drizzle",
-            61: "L. Rain", 63: "Rain", 65: "H. Rain", 66: "Freez Rain",
-            67: "H. Freez Rain", 71: "L. Snow", 73: "Snow", 75: "H. Snow",
-            77: "Snow Grains", 80: "L. Showers", 81: "Showers", 82: "H. Showers",
-            85: "L. Snow Shwrs", 86: "Snow Shwrs", 95: "Thunderstorms",
-            96: "T-Storm/Hail", 99: "H. T-Storm/Hail"
+            0: "Clear skies", 1: "Mostly clear", 2: "Partly cloudy", 3: "Overcast",
+            45: "Foggy conditions", 48: "Rime fog", 51: "Light drizzle", 53: "Drizzle",
+            55: "Heavy drizzle", 56: "Freezing drizzle", 57: "Heavy freezing drizzle",
+            61: "Light rain", 63: "Rain", 65: "Heavy rain", 66: "Freezing rain",
+            67: "Heavy freezing rain", 71: "Light snow", 73: "Snow", 75: "Heavy snow",
+            77: "Snow grains", 80: "Light showers", 81: "Showers", 82: "Heavy showers",
+            85: "Light snow showers", 86: "Snow showers", 95: "Thunderstorms",
+            96: "Thunderstorms with hail", 99: "Heavy thunderstorms with hail"
         }
-        return wmo_codes.get(code, "Unknown")
+        return wmo_codes.get(code, "Partly cloudy").lower()

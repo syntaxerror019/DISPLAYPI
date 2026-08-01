@@ -108,7 +108,7 @@ def main():
                 minute = now.strftime("%M")
                 ampm = now.strftime("%p")
                 
-                prefix = f"{month_day} {hour}"
+                prefix = f"{month_day}, {hour}"
                 colon = ":"
                 suffix = f"{minute} {ampm}"
                 
@@ -143,19 +143,22 @@ def main():
                 
                 forecast_parts = []
                 if f_desc:
-                    forecast_parts.append(f"Tomorrow's Weather Forecast:           {f_desc}")
-                if f_max is not None and f_min is not None:
-                    forecast_parts.append(f"High Temp: {f_max:.0f}F")
-                    forecast_parts.append(f"Low Temp: {f_min:.0f}F")
-                if f_pop is not None and f_pop > 10:
-                    forecast_parts.append(f"Chance of Rain: {f_pop}%")
-                
-                if forecast_parts:
-                    forecast_str = " - ".join(forecast_parts)
+                    forecast_str = f"Tomorrow's Weather Forecast: {f_desc.capitalize()}"
+                    if f_pop is not None and f_pop > 10:
+                        forecast_str += f" with a {f_pop}% chance of rain."
+                    if f_max is not None and f_min is not None:
+                        forecast_str += f" Highs around {f_max:.0f}F and lows around {f_min:.0f}F."
                     renderer.scroll_text(forecast_str, font=renderer.font_standard)
                     
+            # 2.5 History Events (Only once every 5 loops)
+            if loop_count % 5 == 0:
+                history_events = fetcher.get_history()
+                if history_events:
+                    hist_str = "  ***  ".join(history_events)
+                    renderer.scroll_text(f"THIS DAY IN HISTORY: {hist_str}", font=renderer.font_lcd)
+
             # 3. Normal Countdowns (> 1 hour)
-            if closest_event and closest_delta_sec >= 3600:
+            if closest_event and closest_delta_sec >= 3600 and (loop_count % 5 == 0):
                 if closest_delta_sec > 86400:
                     days = int(closest_delta_sec // 86400)
                     cd_text = f"{days} DAYS UNTIL {closest_event.upper()}!"
@@ -163,9 +166,8 @@ def main():
                     hours = int(closest_delta_sec // 3600)
                     mins = int((closest_delta_sec % 3600) // 60)
                     cd_text = f"{hours}h {mins}m UNTIL {closest_event.upper()}!"
-                    
-                do_flash = (loop_count % 5 == 0)
-                renderer.display_epileptic_countdown(cd_text, hold_time=3.0, font=renderer.font_standard, flash=do_flash)
+
+                renderer.display_epileptic_countdown(cd_text, hold_time=3.0, font=renderer.font_standard, flash=True)
             
             # 4. News (SCROLLING)
             news = fetcher.get_news()
