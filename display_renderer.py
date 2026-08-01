@@ -87,8 +87,8 @@ class DisplayRenderer:
                 w_prefix, _ = textsize(prefix, font=font)
                 w_colon, _ = textsize(colon, font=font)
                 colon_x = x_offset + w_prefix
-                # Overwrite colon area with black
-                draw.rectangle((colon_x, 0, colon_x + w_colon, self.device.height), fill="black")
+                # Overwrite colon area with black (shrunken bounds to not clip numbers)
+                draw.rectangle((colon_x + 1, 0, colon_x + w_colon - 2, self.device.height), fill="black")
 
     def clear(self):
         self.device.clear()

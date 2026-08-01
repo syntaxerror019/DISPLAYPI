@@ -65,6 +65,19 @@ def main():
                 # Pollen
                 pollen = weather.get("pollen")
                 renderer.display_centered_animated(f"POL: {pollen}", font=renderer.font_standard)
+                
+                # --- Forecast ---
+                f_desc = weather.get("forecast_desc")
+                f_max = weather.get("forecast_max_f")
+                f_min = weather.get("forecast_min_f")
+                f_pop = weather.get("forecast_pop")
+                
+                if f_desc:
+                    renderer.display_centered_animated(f"TMRO: {f_desc}", font=renderer.font_standard)
+                if f_max is not None and f_min is not None:
+                    renderer.display_centered_animated(f"H: {f_max:.0f}F L: {f_min:.0f}F", font=renderer.font_standard)
+                if f_pop is not None and f_pop > 10:
+                    renderer.display_centered_animated(f"RAIN: {f_pop}%", font=renderer.font_standard)
             
             # 3. News (SCROLLING)
             news = fetcher.get_news()

@@ -44,8 +44,8 @@ class DataFetcher:
     def _update_weather_loop(self):
         while True:
             try:
-                # 1. Fetch main weather
-                w_url = f"https://api.open-meteo.com/v1/forecast?latitude={config.LATITUDE}&longitude={config.LONGITUDE}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m&wind_speed_unit=mph&timezone={config.TIMEZONE}"
+                # 1. Fetch main weather (including daily forecast for tomorrow)
+                w_url = f"https://api.open-meteo.com/v1/forecast?latitude={config.LATITUDE}&longitude={config.LONGITUDE}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&wind_speed_unit=mph&timezone={config.TIMEZONE}"
                 w_resp = requests.get(w_url, timeout=10)
                 
                 # 2. Fetch pollen (Air Quality API)
@@ -56,11 +56,26 @@ class DataFetcher:
                     w_data = w_resp.json()
                     p_data = p_resp.json()
                     
+                    # Current weather
                     current = w_data.get("current", {})
                     temp_c = current.get("temperature_2m")
                     feels_c = current.get("apparent_temperature")
                     humidity = current.get("relative_humidity_2m")
                     wind = current.get("wind_speed_10m")
+                    
+                    # Forecast (index 1 is tomorrow)
+                    daily = w_data.get("daily", {})
+                    if daily and len(daily.get("time", [])) > 1:
+                        forecast_code = daily.get("weather_code", [])[1]
+                        forecast_desc = self._wmo_code_to_desc(forecast_code)
+                        forecast_max_c = daily.get("temperature_2m_max", [])[1]
+                        forecast_min_c = daily.get("temperature_2m_min", [])[1]
+                        forecast_pop = daily.get("precipitation_probability_max", [])[1]
+                    else:
+                        forecast_desc = "Unknown"
+                        forecast_max_c = None
+                        forecast_min_c = None
+                        forecast_pop = None
                     
                     p_current = p_data.get("current", {})
                     # Sum all pollen types
@@ -93,12 +108,18 @@ class DataFetcher:
                         self.weather_data["wind_mph"] = wind
                         self.weather_data["pollen"] = pollen_level
                         
-                time.sleep(config.WEATHER_UPDATE_INTERVAL)
+                        # Store forecast
+                        self.weather_data["forecast_desc"] = forecast_desc
+                        self.weather_data["forecast_pop"] = forecast_pop
+                        if forecast_max_c is not None and forecast_min_c is not None:
+                            self.weather_data["forecast_max_f"] = (forecast_max_c * 9/5) + 32
+                            self.weather_data["forecast_min_f"] = (forecast_min_c * 9/5) + 32
                         
             except Exception as e:
                 print(f"Weather fetch error: {e}")
-                # Retry in 10 seconds if there was an error
-                time.sleep(10)
+                
+            time.sleep(config.WEATHER_UPDATE_INTERVAL)
+
     def _update_news_loop(self):
         while True:
             try:
@@ -115,3 +136,16 @@ class DataFetcher:
                 print(f"News fetch error: {e}")
                 
             time.sleep(config.NEWS_UPDATE_INTERVAL)
+
+    def _wmo_code_to_desc(self, code):
+        wmo_codes = {
+            0: "Clear", 1: "M. Clear", 2: "P. Cloudy", 3: "Overcast",
+            45: "Fog", 48: "Rime Fog", 51: "L. Drizzle", 53: "Drizzle",
+            55: "H. Drizzle", 56: "Freez Drizzle", 57: "H. Freez Drizzle",
+            61: "L. Rain", 63: "Rain", 65: "H. Rain", 66: "Freez Rain",
+            67: "H. Freez Rain", 71: "L. Snow", 73: "Snow", 75: "H. Snow",
+            77: "Snow Grains", 80: "L. Showers", 81: "Showers", 82: "H. Showers",
+            85: "L. Snow Shwrs", 86: "Snow Shwrs", 95: "Thunderstorms",
+            96: "T-Storm/Hail", 99: "H. T-Storm/Hail"
+        }
+        return wmo_codes.get(code, "Unknown")
