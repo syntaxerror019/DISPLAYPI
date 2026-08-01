@@ -1,4 +1,14 @@
 {
-  "Xmas": "2026-12-25",
-  "Halloween": "2026-10-31"
+  "New Year's Day": "01-01",
+  "Valentine's Day": "02-14",
+  "St. Patrick's Day": "03-17",
+  "Mother's Day": "Mother's Day",
+  "Memorial Day": "Memorial Day",
+  "Father's Day": "Father's Day",
+  "4th of July": "07-04",
+  "Labor Day": "Labor Day",
+  "Halloween": "10-31",
+  "Thanksgiving": "Thanksgiving",
+  "Christmas": "12-25",
+  "New Year's Eve": "12-31"
 }

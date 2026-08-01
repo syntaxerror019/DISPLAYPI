@@ -119,6 +119,8 @@ class DataFetcher:
                         self.weather_data["forecast_desc"] = forecast_desc
                         self.weather_data["forecast_pop"] = forecast_pop
                         if forecast_max_c is not None and forecast_min_c is not None:
+                            self.weather_data["forecast_max_c"] = forecast_max_c
+                            self.weather_data["forecast_min_c"] = forecast_min_c
                             self.weather_data["forecast_max_f"] = (forecast_max_c * 9/5) + 32
                             self.weather_data["forecast_min_f"] = (forecast_min_c * 9/5) + 32
                         
@@ -151,10 +153,11 @@ class DataFetcher:
                 if resp.status_code == 200:
                     data = resp.json()
                     events = []
-                    for item in data.get("results", [])[:3]: # grab top 3 events
+                    # Just grab the first event, and use its title
+                    for item in data.get("results", [])[:1]:
                         year = item.get("year", "")
-                        desc = item.get("description", "")
-                        events.append(f"In {year}, {desc}")
+                        title = item.get("title", "")
+                        events.append(f"In {year}: {title}")
                     
                     if events:
                         with self._lock:

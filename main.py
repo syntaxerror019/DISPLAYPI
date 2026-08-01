@@ -1,5 +1,6 @@
 import time
 import datetime
+import calendar
 from display_renderer import DisplayRenderer
 from data_fetcher import DataFetcher
 import config
@@ -25,6 +26,77 @@ def check_for_updates(renderer):
     except Exception as e:
         print(f"Auto-update failed: {e}")
 
+def get_dynamic_holiday(name, year):
+    name = name.lower()
+    if name == "thanksgiving":
+        cal = calendar.monthcalendar(year, 11)
+        thursdays = [week[3] for week in cal if week[3] != 0]
+        return datetime.datetime(year, 11, thursdays[3])
+    elif name == "mothers day" or name == "mother's day":
+        cal = calendar.monthcalendar(year, 5)
+        sundays = [week[6] for week in cal if week[6] != 0]
+        return datetime.datetime(year, 5, sundays[1])
+    elif name == "fathers day" or name == "father's day":
+        cal = calendar.monthcalendar(year, 6)
+        sundays = [week[6] for week in cal if week[6] != 0]
+        return datetime.datetime(year, 6, sundays[2])
+    elif name == "labor day":
+        cal = calendar.monthcalendar(year, 9)
+        mondays = [week[0] for week in cal if week[0] != 0]
+        return datetime.datetime(year, 9, mondays[0])
+    elif name == "memorial day":
+        cal = calendar.monthcalendar(year, 5)
+        mondays = [week[0] for week in cal if week[0] != 0]
+        return datetime.datetime(year, 5, mondays[-1])
+    return None
+
+def parse_event_date(date_str, now):
+    date_str = date_str.strip()
+    
+    # 1. Dynamic Holidays
+    dynamic = get_dynamic_holiday(date_str, now.year)
+    if dynamic:
+        if dynamic < now:
+            dynamic = get_dynamic_holiday(date_str, now.year + 1)
+        return dynamic
+        
+    parts = date_str.split(" ")
+    date_part = parts[0]
+    time_part = parts[1] if len(parts) > 1 else "00:00:00"
+    
+    date_comps = date_part.split("-")
+    try:
+        t_obj = datetime.datetime.strptime(time_part, "%H:%M:%S").time()
+    except:
+        t_obj = datetime.time(0, 0, 0)
+        
+    if len(date_comps) == 2:
+        # Recurring MM-DD
+        m, d = int(date_comps[0]), int(date_comps[1])
+        try:
+            event_dt = datetime.datetime(now.year, m, d, t_obj.hour, t_obj.minute, t_obj.second)
+        except ValueError:
+            # Leap year exception for Feb 29
+            event_dt = datetime.datetime(now.year, m, d - 1, t_obj.hour, t_obj.minute, t_obj.second)
+            
+        if event_dt < now:
+            # Next occurrence
+            next_year = now.year + 1
+            if m == 2 and d == 29:
+                while not calendar.isleap(next_year):
+                    next_year += 1
+            event_dt = datetime.datetime(next_year, m, d, t_obj.hour, t_obj.minute, t_obj.second)
+        return event_dt
+        
+    elif len(date_comps) == 3:
+        # One-time YYYY-MM-DD
+        try:
+            return datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+        except:
+            return datetime.datetime.strptime(date_part, "%Y-%m-%d")
+            
+    return None
+
 def get_closest_countdown():
     if not os.path.exists("countdowns.json"):
         return None, 0
@@ -37,10 +109,9 @@ def get_closest_countdown():
         now = datetime.datetime.now()
         
         for event_name, date_str in countdowns.items():
-            try:
-                event_datetime = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-            except ValueError:
-                event_datetime = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+            event_datetime = parse_event_date(date_str, now)
+            if not event_datetime:
+                continue
                 
             delta = (event_datetime - now).total_seconds()
             
@@ -139,6 +210,8 @@ def main():
                 f_desc = weather.get("forecast_desc")
                 f_max = weather.get("forecast_max_f")
                 f_min = weather.get("forecast_min_f")
+                f_max_c = weather.get("forecast_max_c")
+                f_min_c = weather.get("forecast_min_c")
                 f_pop = weather.get("forecast_pop")
                 
                 forecast_parts = []
@@ -146,16 +219,16 @@ def main():
                     forecast_str = f"Tomorrow's Weather Forecast: {f_desc.capitalize()}"
                     if f_pop is not None and f_pop > 10:
                         forecast_str += f" with a {f_pop}% chance of rain."
-                    if f_max is not None and f_min is not None:
-                        forecast_str += f" Highs around {f_max:.0f}F and lows around {f_min:.0f}F."
+                    if f_max is not None and f_min is not None and f_max_c is not None and f_min_c is not None:
+                        forecast_str += f" Highs around {f_max:.0f}F ({f_max_c:.0f}C) and lows around {f_min:.0f}F ({f_min_c:.0f}C)."
                     renderer.scroll_text(forecast_str, font=renderer.font_standard)
                     
             # 2.5 History Events (Only once every 5 loops)
-            if True:
+            if loop_count % 5 == 0:
                 history_events = fetcher.get_history()
                 if history_events:
                     hist_str = history_events[0]
-                    renderer.scroll_text(f"THIS DAY IN HISTORY: {hist_str}", font=renderer.font_lcd)
+                    renderer.scroll_text(f"On This Day in History...  {hist_str}", font=renderer.font_lcd)
 
             # 3. Normal Countdowns (> 1 hour)
             if closest_event and closest_delta_sec >= 3600 and (loop_count % 5 == 0):
@@ -173,7 +246,7 @@ def main():
             news = fetcher.get_news()
             if news:
                 news_str = "  ***  ".join(news)
-                renderer.scroll_text(f"NEWS: {news_str}", font=renderer.font_lcd)
+                renderer.scroll_text(f"Latest World News: {news_str}", font=renderer.font_lcd)
 
         except KeyboardInterrupt:
             print("Exiting...")
