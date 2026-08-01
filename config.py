@@ -1,7 +1,7 @@
 # --- Display Settings ---
 CASCADED_MATRICES = 12
 BLOCK_ORIENTATION = -90  # Default for most 4-in-1 modules. Change to 90 or 0 if scrolling is wrong.
-SCROLL_DELAY = 0.015
+SCROLL_DELAY = 0.010
 BRIGHTNESS = 128  # 0 to 255
 
 # --- Weather Settings ---

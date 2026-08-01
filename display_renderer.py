@@ -97,7 +97,7 @@ class DisplayRenderer:
                 x1 = colon_x + w_colon - 2
                 draw.rectangle((x0, 0, x1, self.device.height), fill="black")
 
-    def display_epileptic_countdown(self, text, hold_time=3.0, font=None):
+    def display_epileptic_countdown(self, text, hold_time=3.0, font=None, flash=True):
         if font is None:
             font = self.font_standard
             
@@ -106,6 +106,13 @@ class DisplayRenderer:
         if x_offset < 0:
             x_offset = 0
             
+        if not flash:
+            # If no flash, just display statically for the equivalent total duration (3.0 + 0.3 + 0.3)
+            with canvas(self.device) as draw:
+                draw_text(draw, (x_offset, 0), text, fill="white", font=font)
+            time.sleep(hold_time + 0.6)
+            return
+
         # 1. Intro Flashes (300ms total, super fast)
         start_time = time.time()
         inverted = False
@@ -138,6 +145,28 @@ class DisplayRenderer:
                     draw_text(draw, (x_offset, 0), text, fill="white", font=font)
             inverted = not inverted
             time.sleep(0.03)
+
+    def display_celebration(self, text, duration=60.0, font=None):
+        if font is None:
+            font = self.font_standard
+            
+        w, h = textsize(text, font=font)
+        x_offset = (self.device.width - w) // 2
+        if x_offset < 0:
+            x_offset = 0
+            
+        start_time = time.time()
+        inverted = False
+        while time.time() - start_time < duration:
+            with canvas(self.device) as draw:
+                if inverted:
+                    draw.rectangle((0, 0, self.device.width, self.device.height), fill="white")
+                    draw_text(draw, (x_offset, 0), text, fill="black", font=font)
+                else:
+                    draw.rectangle((0, 0, self.device.width, self.device.height), fill="black")
+                    draw_text(draw, (x_offset, 0), text, fill="white", font=font)
+            inverted = not inverted
+            time.sleep(0.5)
 
     def clear(self):
         self.device.clear()
