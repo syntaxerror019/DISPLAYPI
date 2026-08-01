@@ -92,5 +92,31 @@ class DisplayRenderer:
             # Draw suffix
             draw_text(draw, (x_offset + w_prefix + w_colon, 0), suffix, fill="white", font=font)
 
+    def display_epileptic_countdown(self, text, duration=3.0, font=None):
+        if font is None:
+            font = self.font_standard
+            
+        w, h = textsize(text, font=font)
+        x_offset = (self.device.width - w) // 2
+        if x_offset < 0:
+            x_offset = 0
+            
+        start_time = time.time()
+        inverted = False
+        
+        while time.time() - start_time < duration:
+            with canvas(self.device) as draw:
+                if inverted:
+                    # White background, black text
+                    draw.rectangle((0, 0, self.device.width, self.device.height), fill="white")
+                    draw_text(draw, (x_offset, 0), text, fill="black", font=font)
+                else:
+                    # Black background, white text
+                    draw.rectangle((0, 0, self.device.width, self.device.height), fill="black")
+                    draw_text(draw, (x_offset, 0), text, fill="white", font=font)
+            
+            inverted = not inverted
+            time.sleep(0.05) # Super fast flash
+
     def clear(self):
         self.device.clear()

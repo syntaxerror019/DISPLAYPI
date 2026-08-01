@@ -3,6 +3,8 @@ import datetime
 from display_renderer import DisplayRenderer
 from data_fetcher import DataFetcher
 import config
+import json
+import os
 
 def get_ordinal(n):
     return str(n) + {1: 'st', 2: 'nd', 3: 'rd'}.get(4 if 10 <= n % 100 < 20 else n % 10, 'th')
@@ -74,7 +76,7 @@ def main():
                 
                 forecast_parts = []
                 if f_desc:
-                    forecast_parts.append(f"TMRO: {f_desc}")
+                    forecast_parts.append(f"Tomorrow's Forecast: {f_desc}")
                 if f_max is not None and f_min is not None:
                     forecast_parts.append(f"High: {f_max:.0f}F")
                     forecast_parts.append(f"Low: {f_min:.0f}F")
@@ -84,6 +86,31 @@ def main():
                 if forecast_parts:
                     forecast_str = " - ".join(forecast_parts)
                     renderer.scroll_text(forecast_str, font=renderer.font_standard)
+                    
+                # --- Countdowns ---
+                if os.path.exists("countdowns.json"):
+                    try:
+                        with open("countdowns.json", "r") as f:
+                            countdowns = json.load(f)
+                            
+                        closest_event = None
+                        closest_days = float('inf')
+                        today = datetime.date.today()
+                        
+                        for event_name, date_str in countdowns.items():
+                            event_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").date()
+                            delta = (event_date - today).days
+                            
+                            # Find the closest future event
+                            if 0 <= delta < closest_days:
+                                closest_days = delta
+                                closest_event = event_name
+                                
+                        if closest_event:
+                            cd_text = f"{closest_days} DAYS UNTIL {closest_event.upper()}!"
+                            renderer.display_epileptic_countdown(cd_text, duration=4.0, font=renderer.font_standard)
+                    except Exception as e:
+                        print(f"Countdown error: {e}")
             
             # 3. News (SCROLLING)
             news = fetcher.get_news()
