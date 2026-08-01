@@ -104,12 +104,12 @@ def main():
                 
                 forecast_parts = []
                 if f_desc:
-                    forecast_parts.append(f"Tomorrow's Weather Forecast: {f_desc}")
+                    forecast_parts.append(f"Tomorrow's Weather Forecast:           {f_desc}")
                 if f_max is not None and f_min is not None:
-                    forecast_parts.append(f"High: {f_max:.0f}F")
-                    forecast_parts.append(f"Low: {f_min:.0f}F")
+                    forecast_parts.append(f"High Temp: {f_max:.0f}F")
+                    forecast_parts.append(f"Low Temp: {f_min:.0f}F")
                 if f_pop is not None and f_pop > 10:
-                    forecast_parts.append(f"Rain: {f_pop}%")
+                    forecast_parts.append(f"Chance of Rain: {f_pop}%")
                 
                 if forecast_parts:
                     forecast_str = " - ".join(forecast_parts)
