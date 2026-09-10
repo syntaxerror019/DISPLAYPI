@@ -110,13 +110,13 @@ class App:
         if not weather or weather.get("temp_c") is None:
             return
 
-        self._show_animated(f"Temp: {weather['temp_f']:.0f}F {weather['temp_c']:.0f}C")
-        self._show_animated(f"Feels: {weather['feels_f']:.0f}F {weather['feels_c']:.0f}C")
+        self._show_animated(f"Temperature: {weather['temp_f']:.0f}F {weather['temp_c']:.0f}C")
+        self._show_animated(f"Feels Like: {weather['feels_f']:.0f}F {weather['feels_c']:.0f}C")
         self._show_animated(f"Humidity: {weather['humidity']:.0f}%")
-        self._show_animated(f"Wind: {weather['wind_mph']:.0f}mph")
-        self._show_animated(f"Gusts: {weather['wind_gusts_mph']:.0f}mph")
+        self._show_animated(f"Wind Speed: {weather['wind_mph']:.0f}mph")
+        self._show_animated(f"Gust Speed: {weather['wind_gusts_mph']:.0f}mph")
         if weather.get("rain_chance") is not None:
-            self._show_animated(f"Rain: {weather['rain_chance']}%")
+            self._show_animated(f"Chance of Rain: {weather['rain_chance']}%")
 
         forecast = self._format_forecast(weather)
         if forecast:
