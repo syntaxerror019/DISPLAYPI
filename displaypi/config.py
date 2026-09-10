@@ -7,7 +7,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 COUNTDOWNS_FILE = DATA_DIR / "countdowns.json"
 
 # --- Display Settings ---
-CASCADED_MATRICES = 12
+CASCADED_MATRICES = 28
 BLOCK_ORIENTATION = -90  # Default for most 4-in-1 modules. Change to 90 or 0 if scrolling is wrong.
 SCROLL_DELAY = 0.015
 BRIGHTNESS = 128  # 0 to 255
