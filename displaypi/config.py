@@ -9,6 +9,7 @@ COUNTDOWNS_FILE = DATA_DIR / "countdowns.json"
 # --- Display Settings ---
 CASCADED_MATRICES = 20
 BLOCK_ORIENTATION = -90  # Default for most 4-in-1 modules. Change to 90 or 0 if scrolling is wrong.
+DISPLAY_ROTATE = 2  # 0=0°, 1=90°, 2=180°, 3=270°
 SCROLL_DELAY = 0.015
 BRIGHTNESS = 128  # 0 to 255
 

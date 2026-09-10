@@ -22,6 +22,7 @@ class DisplayRenderer:
             self.serial,
             cascaded=config.CASCADED_MATRICES,
             block_orientation=config.BLOCK_ORIENTATION,
+            rotate=config.DISPLAY_ROTATE,
         )
 
         self.device.contrast(config.BRIGHTNESS)
