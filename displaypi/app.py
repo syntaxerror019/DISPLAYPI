@@ -14,8 +14,6 @@ class App:
     """Orchestrates the infinite display loop for the LED matrix."""
 
     CLOCK_DURATION_SECONDS = 30
-    HISTORY_EVERY_N_LOOPS = 5
-    COUNTDOWN_EVERY_N_LOOPS = 5
     COUNTDOWN_LOCK_WINDOW_SECONDS = 3600  # < 1 hour: lock the display
     NEWS_SEPARATOR = "  ***  "
 
@@ -116,7 +114,9 @@ class App:
         self._show_animated(f"Feels: {weather['feels_f']:.0f}F {weather['feels_c']:.0f}C")
         self._show_animated(f"Humidity: {weather['humidity']:.0f}%")
         self._show_animated(f"Wind: {weather['wind_mph']:.0f}mph")
-        self._show_animated(f"Allergies: {weather['pollen']}")
+        self._show_animated(f"Gusts: {weather['wind_gusts_mph']:.0f}mph")
+        if weather.get("rain_chance") is not None:
+            self._show_animated(f"Rain: {weather['rain_chance']}%")
 
         forecast = self._format_forecast(weather)
         if forecast:
@@ -146,7 +146,7 @@ class App:
         return forecast
 
     def _run_history(self, loop_count):
-        if loop_count % self.HISTORY_EVERY_N_LOOPS != 0:
+        if loop_count % config.HISTORY_EVERY_N_LOOPS != 0:
             return
 
         history_events = self.fetcher.get_history()
@@ -160,7 +160,7 @@ class App:
         if not closest_event or closest_delta_sec < config.COUNTDOWN_LOCK_WINDOW_SECONDS:
             return
 
-        if loop_count % self.COUNTDOWN_EVERY_N_LOOPS != 0:
+        if loop_count % config.COUNTDOWN_EVERY_N_LOOPS != 0:
             return
 
         if closest_delta_sec > 86400:

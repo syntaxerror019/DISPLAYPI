@@ -26,9 +26,13 @@ NEWS_UPDATE_INTERVAL = 3600  # 1 hour
 
 # --- History Settings ---
 HISTORY_UPDATE_INTERVAL = 43200  # 12 hours
+HISTORY_EVERY_N_LOOPS = 5  # how many main-loop cycles between "On This Day" displays
+
+# --- Countdown Display Settings ---
+COUNTDOWN_EVERY_N_LOOPS = 5  # how many main-loop cycles between countdown reminders
 
 # --- OTA Update Settings ---
 UPDATE_CHECK_INTERVAL = 60  # seconds between git update checks
 
 # --- Countdown Lock Settings ---
-COUNTDOWN_LOCK_WINDOW_SECONDS = 3600  # < 1 hour: lock the display
+COUNTDOWN_LOCK_WINDOW_SECONDS = 3600  # < 1 hour: lock the display to the countdown (e.g. new years!!)

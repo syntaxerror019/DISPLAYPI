@@ -57,7 +57,8 @@ class DataFetcher:
             "feels_f": None,
             "humidity": None,
             "wind_mph": None,
-            "pollen": None,
+            "wind_gusts_mph": None,
+            "rain_chance": None,
         }
         self.news_headlines = []
         self.history_events = []
@@ -116,36 +117,30 @@ class DataFetcher:
         weather_url = (
             "https://api.open-meteo.com/v1/forecast"
             f"?latitude={config.LATITUDE}&longitude={config.LONGITUDE}"
-            "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m"
+            "&current=temperature_2m,apparent_temperature,relative_humidity_2m,"
+            "wind_speed_10m,wind_gusts_10m,precipitation_probability"
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
             f"&wind_speed_unit=mph&timezone={config.TIMEZONE}"
         )
-        pollen_url = (
-            "https://air-quality-api.open-meteo.com/v1/air-quality"
-            f"?latitude={config.LATITUDE}&longitude={config.LONGITUDE}"
-            "&current=alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen"
-            f"&timezone={config.TIMEZONE}"
-        )
 
         weather_resp = requests.get(weather_url, timeout=10)
-        pollen_resp = requests.get(pollen_url, timeout=10)
 
-        if weather_resp.status_code != 200 or pollen_resp.status_code != 200:
+        if weather_resp.status_code != 200:
             return
 
-        self._store_weather(weather_resp.json(), pollen_resp.json())
+        self._store_weather(weather_resp.json())
 
-    def _store_weather(self, weather_data, pollen_data):
+    def _store_weather(self, weather_data):
         current = weather_data.get("current", {})
         daily = weather_data.get("daily", {})
-        pollen_current = pollen_data.get("current", {})
 
         forecast = self._parse_forecast(daily)
 
         updates = {
             "humidity": current.get("relative_humidity_2m"),
             "wind_mph": current.get("wind_speed_10m"),
-            "pollen": self._pollen_level(pollen_current),
+            "wind_gusts_mph": current.get("wind_gusts_10m"),
+            "rain_chance": current.get("precipitation_probability"),
             **forecast,
         }
 
@@ -187,25 +182,6 @@ class DataFetcher:
             forecast["forecast_max_f"] = (forecast_max_c * 9 / 5) + 32
             forecast["forecast_min_f"] = (forecast_min_c * 9 / 5) + 32
         return forecast
-
-    @staticmethod
-    def _pollen_level(pollen_current):
-        pollen_sum = sum(
-            pollen_current.get(key, 0) or 0
-            for key in (
-                "alder_pollen",
-                "birch_pollen",
-                "grass_pollen",
-                "mugwort_pollen",
-                "olive_pollen",
-                "ragweed_pollen",
-            )
-        )
-        if pollen_sum < 10:
-            return "Low"
-        if pollen_sum < 50:
-            return "Medium"
-        return "High"
 
     def _refresh_news(self):
         feed = feedparser.parse(config.RSS_FEED_URL)
