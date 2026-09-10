@@ -1,4 +1,3 @@
-miles@raspberrypi:~/DISPLAYPI $ cat ../max7219/examples/matrix_demo.py 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # Copyright (c) 2017-18 Richard Hull and contributors
