@@ -1,10 +1,34 @@
 """Application configuration and constants."""
 
+import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 COUNTDOWNS_FILE = DATA_DIR / "countdowns.json"
+
+
+def _load_env_file(path):
+    """Load KEY=VALUE pairs from an optional .env file into the environment.
+
+    Existing environment variables take precedence so real deployments can
+    override the file without editing it.
+    """
+    if not path.exists():
+        return
+
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip("'").strip('"')
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_env_file(PROJECT_ROOT / ".env")
 
 # --- Display Settings ---
 CASCADED_MATRICES = 20
@@ -14,8 +38,8 @@ SCROLL_DELAY = 0.012
 BRIGHTNESS = 128  # 0 to 255
 
 # --- Weather Settings ---
-LATITUDE = 42.4184  # Medford, MA
-LONGITUDE = -71.1062
+LATITUDE = 42.419331
+LONGITUDE = -71.119720
 TIMEZONE = "auto"
 WEATHER_UPDATE_INTERVAL = 900  # 15 minutes
 
@@ -36,3 +60,13 @@ UPDATE_CHECK_INTERVAL = 60  # seconds between git update checks
 
 # --- Countdown Lock Settings ---
 COUNTDOWN_LOCK_WINDOW_SECONDS = 3600  # < 1 hour: lock the display to the countdown (e.g. new years!!)
+
+# --- MBTA Bus Settings ---
+MBTA_API_KEY = os.environ.get("MBTA_API_KEY", "")
+MBTA_STOP_ID = 5034
+MBTA_ROUTE_ID = 101
+MBTA_PREDICTIONS_URL = "https://api-v3.mbta.com/predictions"
+MBTA_POLL_INTERVAL = 30  # seconds between bus arrival refreshes
+MBTA_MAX_BUSES = 3  # how many upcoming buses to show
+MBTA_WINDOW_START = "06:30"
+MBTA_WINDOW_END = "07:30"

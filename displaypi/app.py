@@ -3,7 +3,7 @@
 import time
 import datetime
 
-from . import config
+from . import config, bus
 from .countdown import get_closest_countdown
 from .data_fetcher import DataFetcher
 from .display_renderer import DisplayRenderer
@@ -24,8 +24,8 @@ class App:
     def run(self):
         print("Starting Professional Kitchen Display...")
         print("Fetching initial data...")
-        self.renderer.display_centered("LOADING...")
-        time.sleep(3)
+        self.renderer.display_centered("v2  www.mileshilliard.com")
+        time.sleep(5)
 
         loop_count = 0
         last_update_check = 0.0
@@ -39,6 +39,9 @@ class App:
                     last_update_check = current_time
 
                 closest_event, closest_delta_sec = get_closest_countdown()
+
+                if self._run_bus_lock_mode():
+                    continue
 
                 if self._run_countdown_lock_mode(closest_event, closest_delta_sec):
                     continue
@@ -57,6 +60,40 @@ class App:
             except Exception as exc:
                 print(f"Main loop error: {exc}")
                 time.sleep(5)
+
+    def _run_bus_lock_mode(self):
+        """Lock the display on live bus arrivals during the weekday window.
+
+        Polls the MBTA API every MBTA_POLL_INTERVAL seconds and scrolls the
+        arrival times until the buses are gone or the window ends.
+        """
+        if not bus.is_in_bus_window():
+            return False
+
+        last_poll = 0.0
+        message = None
+
+        while bus.is_in_bus_window():
+            if time.time() - last_poll >= config.MBTA_POLL_INTERVAL:
+                last_poll = time.time()
+                try:
+                    predictions = bus.get_bus_predictions()
+                except Exception as exc:
+                    print(f"Bus fetch error: {exc}")
+                    time.sleep(config.MBTA_POLL_INTERVAL)
+                    continue
+
+                if not predictions or all(minutes == 0 for minutes in predictions):
+                    break
+
+                message = bus.format_bus_message(predictions)
+
+            if message:
+                self.renderer.scroll_text(message, font=self.renderer.font_standard)
+            else:
+                time.sleep(1)
+
+        return True
 
     def _run_countdown_lock_mode(self, closest_event, closest_delta_sec):
         """Lock the display on a live countdown when an event is imminent."""
