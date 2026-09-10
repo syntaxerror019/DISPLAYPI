@@ -75,8 +75,9 @@ class App:
     def _run_bus_lock_mode(self):
         """Lock the display on live bus arrivals during the weekday window.
 
-        Polls the MBTA API every MBTA_POLL_INTERVAL seconds and scrolls the
-        arrival times until the buses are gone or the window ends.
+        Polls the MBTA API every MBTA_POLL_INTERVAL seconds and holds a fixed
+        message showing the arrival times until the buses are gone or the
+        window ends.
         """
         if not bus.is_in_bus_window():
             if config.DEBUG:
@@ -92,7 +93,6 @@ class App:
         )
 
         last_poll = 0.0
-        message = None
 
         while bus.is_in_bus_window():
             if time.time() - last_poll >= config.MBTA_POLL_INTERVAL:
@@ -112,11 +112,9 @@ class App:
 
                 message = bus.format_bus_message(predictions)
                 print(f"Bus: showing {message!r}")
+                self.renderer.display_centered(message, font=self.renderer.font_standard)
 
-            if message:
-                self.renderer.scroll_text(message, font=self.renderer.font_standard)
-            else:
-                time.sleep(1)
+            time.sleep(1)
 
         print("Bus: window ended, reverting to normal cycle")
         return True

@@ -77,5 +77,5 @@ def get_bus_predictions():
 
 
 def format_bus_message(predictions):
-    """Build the on-screen message from a list of minute counts."""
-    return ", ".join(f"Bus {i + 1}: {minutes} mins" for i, minutes in enumerate(predictions))
+    """Build the fixed on-screen message from a list of minute counts."""
+    return f"Buses: {', '.join(str(minutes) for minutes in predictions)} mins"
