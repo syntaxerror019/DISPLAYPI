@@ -68,5 +68,5 @@ MBTA_ROUTE_ID = 101
 MBTA_PREDICTIONS_URL = "https://api-v3.mbta.com/predictions"
 MBTA_POLL_INTERVAL = 30  # seconds between bus arrival refreshes
 MBTA_MAX_BUSES = 3  # how many upcoming buses to show
-MBTA_WINDOW_START = "06:30"
-MBTA_WINDOW_END = "07:30"
+MBTA_WINDOW_START = "022:30"
+MBTA_WINDOW_END = "023:30"
