@@ -33,6 +33,11 @@ class App:
         while True:
             loop_count += 1
             try:
+                if config.DEBUG:
+                    print(
+                        f"--- loop {loop_count} @ {datetime.datetime.now().strftime('%H:%M:%S')} ---"
+                    )
+
                 current_time = time.time()
                 if current_time - last_update_check > config.UPDATE_CHECK_INTERVAL:
                     check_for_updates(self.renderer)
@@ -46,12 +51,18 @@ class App:
                 if self._run_countdown_lock_mode(closest_event, closest_delta_sec):
                     continue
 
+                if config.DEBUG:
+                    print("Normal cycle: clock / weather / history / countdown / news")
+
                 self._run_clock()
 
                 self._run_weather()
                 self._run_history(loop_count)
                 self._run_countdown(loop_count, closest_event, closest_delta_sec)
                 self._run_news()
+
+                if config.DEBUG:
+                    print("Normal cycle complete")
 
             except KeyboardInterrupt:
                 print("Exiting...")
@@ -68,7 +79,17 @@ class App:
         arrival times until the buses are gone or the window ends.
         """
         if not bus.is_in_bus_window():
+            if config.DEBUG:
+                print(
+                    f"Bus: outside window ({config.MBTA_WINDOW_START}-"
+                    f"{config.MBTA_WINDOW_END}), skipping"
+                )
             return False
+
+        print(
+            f"Bus: IN window ({config.MBTA_WINDOW_START}-{config.MBTA_WINDOW_END}), "
+            "locking display on bus arrivals"
+        )
 
         last_poll = 0.0
         message = None
@@ -83,16 +104,21 @@ class App:
                     time.sleep(config.MBTA_POLL_INTERVAL)
                     continue
 
+                print(f"Bus poll result: {predictions}")
+
                 if not predictions or all(minutes == 0 for minutes in predictions):
-                    break
+                    print("Bus: no more buses coming, reverting to normal cycle")
+                    return False
 
                 message = bus.format_bus_message(predictions)
+                print(f"Bus: showing {message!r}")
 
             if message:
                 self.renderer.scroll_text(message, font=self.renderer.font_standard)
             else:
                 time.sleep(1)
 
+        print("Bus: window ended, reverting to normal cycle")
         return True
 
     def _run_countdown_lock_mode(self, closest_event, closest_delta_sec):

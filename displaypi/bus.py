@@ -7,17 +7,42 @@ import requests
 from . import config
 
 
+def _parse_window_time(value):
+    try:
+        return datetime.datetime.strptime(value, "%H:%M").time()
+    except (TypeError, ValueError):
+        return None
+
+
+_WINDOW_START = _parse_window_time(config.MBTA_WINDOW_START)
+_WINDOW_END = _parse_window_time(config.MBTA_WINDOW_END)
+_WINDOW_WARNED = False
+
+
 def is_in_bus_window(date=None):
-    """Return True on weekdays between the configured morning bus window."""
+    """Return True on weekdays between the configured morning bus window.
+
+    If the configured times are invalid, warn once and disable the window so
+    the rest of the display keeps running instead of crashing the loop.
+    """
+    global _WINDOW_WARNED
+    if _WINDOW_START is None or _WINDOW_END is None:
+        if not _WINDOW_WARNED:
+            print(
+                "Bus: invalid window times "
+                f"{config.MBTA_WINDOW_START!r}/{config.MBTA_WINDOW_END!r}, "
+                "bus mode disabled"
+            )
+            _WINDOW_WARNED = True
+        return False
+
     if date is None:
         date = datetime.datetime.now()
 
     if date.weekday() >= 5:  # 5 = Saturday, 6 = Sunday
         return False
 
-    start = datetime.datetime.strptime(config.MBTA_WINDOW_START, "%H:%M").time()
-    end = datetime.datetime.strptime(config.MBTA_WINDOW_END, "%H:%M").time()
-    return start <= date.time() < end
+    return _WINDOW_START <= date.time() < _WINDOW_END
 
 
 def get_bus_predictions():
