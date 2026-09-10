@@ -28,3 +28,6 @@ HISTORY_UPDATE_INTERVAL = 43200  # 12 hours
 
 # --- OTA Update Settings ---
 UPDATE_CHECK_INTERVAL = 60  # seconds between git update checks
+
+# --- Countdown Lock Settings ---
+COUNTDOWN_LOCK_WINDOW_SECONDS = 3600  # < 1 hour: lock the display
