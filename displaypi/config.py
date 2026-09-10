@@ -35,7 +35,7 @@ CASCADED_MATRICES = 20
 BLOCK_ORIENTATION = -90  # Default for most 4-in-1 modules. Change to 90 or 0 if scrolling is wrong.
 DISPLAY_ROTATE = 2  # 0=0°, 1=90°, 2=180°, 3=270°
 SCROLL_DELAY = 0.012
-BRIGHTNESS = 128  # 0 to 255
+BRIGHTNESS = 150  # 0 to 255
 
 # --- Weather Settings ---
 LATITUDE = 42.419331
@@ -50,10 +50,10 @@ NEWS_UPDATE_INTERVAL = 3600  # 1 hour
 
 # --- History Settings ---
 HISTORY_UPDATE_INTERVAL = 43200  # 12 hours
-HISTORY_EVERY_N_LOOPS = 5  # how many main-loop cycles between "On This Day" displays
+HISTORY_EVERY_N_LOOPS = 4  # how many main-loop cycles between "On This Day" displays
 
 # --- Countdown Display Settings ---
-COUNTDOWN_EVERY_N_LOOPS = 5  # how many main-loop cycles between countdown reminders
+COUNTDOWN_EVERY_N_LOOPS = 4  # how many main-loop cycles between countdown reminders
 
 # --- OTA Update Settings ---
 UPDATE_CHECK_INTERVAL = 60  # seconds between git update checks
@@ -68,8 +68,8 @@ MBTA_ROUTE_ID = 101
 MBTA_PREDICTIONS_URL = "https://api-v3.mbta.com/predictions"
 MBTA_POLL_INTERVAL = 30  # seconds between bus arrival refreshes
 MBTA_MAX_BUSES = 3  # how many upcoming buses to show
-MBTA_WINDOW_START = "22:30"
-MBTA_WINDOW_END = "23:30"
+MBTA_WINDOW_START = "06:30"
+MBTA_WINDOW_END = "07:30"
 
 # --- Debug Settings ---
 DEBUG = True  # set to False to quiet the console logs
