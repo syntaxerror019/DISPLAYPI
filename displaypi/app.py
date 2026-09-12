@@ -52,12 +52,15 @@ class App:
                     continue
 
                 if config.DEBUG:
-                    print("Normal cycle: clock / weather / history / countdown / news")
+                    print(
+                        "Normal cycle: clock / weather / history / countdown / news"
+                    )
 
                 self._run_clock()
 
                 self._run_weather()
                 self._run_history(loop_count)
+                self._run_word_of_day(loop_count)
                 self._run_countdown(loop_count, closest_event, closest_delta_sec)
                 self._run_news()
 
@@ -216,6 +219,25 @@ class App:
             self.renderer.scroll_text(
                 f"On This Day in History...  {first_event}", font=self.renderer.font_lcd
             )
+
+    def _run_word_of_day(self, loop_count):
+        if loop_count % config.WORD_EVERY_N_LOOPS != 0:
+            return
+
+        word_of_day = self.fetcher.get_word_of_day()
+        word = word_of_day.get("word")
+        if not word:
+            return
+
+        text = f"Word of the Day: {word.upper()}"
+        part_of_speech = word_of_day.get("part_of_speech")
+        if part_of_speech:
+            text += f" ({part_of_speech})"
+        definition = word_of_day.get("definition")
+        if definition:
+            text += f" - {definition}"
+
+        self.renderer.scroll_text(text, font=self.renderer.font_lcd)
 
     def _run_countdown(self, loop_count, closest_event, closest_delta_sec):
         if not closest_event or closest_delta_sec < config.COUNTDOWN_LOCK_WINDOW_SECONDS:

@@ -50,7 +50,12 @@ NEWS_UPDATE_INTERVAL = 3600  # 1 hour
 
 # --- History Settings ---
 HISTORY_UPDATE_INTERVAL = 43200  # 12 hours
-HISTORY_EVERY_N_LOOPS = 4  # how many main-loop cycles between "On This Day" displays
+HISTORY_EVERY_N_LOOPS = 2  # how many main-loop cycles between "On This Day" displays
+
+# --- Word of the Day Settings ---
+WORD_API_URL = "https://wordoftheday.freeapi.me/"
+WORD_UPDATE_INTERVAL = 3600  # 1 hour
+WORD_EVERY_N_LOOPS = 2  # how many main-loop cycles between word-of-the-day displays
 
 # --- Countdown Display Settings ---
 COUNTDOWN_EVERY_N_LOOPS = 4  # how many main-loop cycles between countdown reminders

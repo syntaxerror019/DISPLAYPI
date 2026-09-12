@@ -62,6 +62,7 @@ class DataFetcher:
         }
         self.news_headlines = []
         self.history_events = []
+        self.word_of_day = {}
 
         self._lock = threading.Lock()
 
@@ -72,6 +73,7 @@ class DataFetcher:
             (self._update_weather_loop, config.WEATHER_UPDATE_INTERVAL),
             (self._update_news_loop, config.NEWS_UPDATE_INTERVAL),
             (self._update_history_loop, config.HISTORY_UPDATE_INTERVAL),
+            (self._update_word_loop, config.WORD_UPDATE_INTERVAL),
         ]
         for target, _interval in jobs:
             thread = threading.Thread(target=target, daemon=True)
@@ -88,6 +90,10 @@ class DataFetcher:
     def get_history(self):
         with self._lock:
             return list(self.history_events)
+
+    def get_word_of_day(self):
+        with self._lock:
+            return dict(self.word_of_day)
 
     def _update_weather_loop(self):
         while True:
@@ -112,6 +118,14 @@ class DataFetcher:
             except Exception as exc:
                 print(f"History fetch error: {exc}")
             time.sleep(config.HISTORY_UPDATE_INTERVAL)
+
+    def _update_word_loop(self):
+        while True:
+            try:
+                self._refresh_word_of_day()
+            except Exception as exc:
+                print(f"Word of the day fetch error: {exc}")
+            time.sleep(config.WORD_UPDATE_INTERVAL)
 
     def _refresh_weather(self):
         weather_url = (
@@ -207,6 +221,25 @@ class DataFetcher:
         if events:
             with self._lock:
                 self.history_events = events
+
+    def _refresh_word_of_day(self):
+        resp = requests.get(config.WORD_API_URL, timeout=10)
+        if resp.status_code != 200:
+            return
+
+        data = resp.json()
+        word = data.get("word")
+        definition = data.get("definition") or data.get("meaning")
+        if not word or not definition:
+            return
+
+        with self._lock:
+            self.word_of_day = {
+                "word": self._sanitize_string(word),
+                "part_of_speech": self._sanitize_string(data.get("partOfSpeech", "")),
+                "definition": self._sanitize_string(definition),
+                "date": data.get("date", ""),
+            }
 
     @staticmethod
     def _sanitize_string(text):
